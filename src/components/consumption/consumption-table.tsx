@@ -92,38 +92,30 @@ export function ConsumptionTable() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse table-fixed">
-              <colgroup>
-                <col className="w-[15%]" /> {/* Monat */}
-                <col className="w-[10%]" /> {/* Jahr */}
-                <col className="w-[19%]" /> {/* Verbrauch */}
-                <col className="w-[19%]" /> {/* Preis */}
-                <col className="w-[19%]" /> {/* Kosten */}
-                <col className="w-[18%]" /> {/* Bezahlt */}
-              </colgroup>
-              <thead>
-                <tr className="bg-muted">
-                  <th className="p-2 text-left font-medium">Monat</th>
-                  <th className="p-2 text-left font-medium">Jahr</th>
-                  <th className="p-2 text-right font-medium">Verbrauch (kWh)</th>
-                  <th className="p-2 text-right font-medium">Preis (€/kWh)</th>
-                  <th className="p-2 text-right font-medium">Kosten (€)</th>
-                  <th className="p-2 text-right font-medium">Bezahlt (€)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((entry) => (
-                  <tr key={entry._id} className="border-b hover:bg-muted/50">
-                    <td className="p-2 text-left">{getMonthName(entry.month)}</td>
-                    <td className="p-2 text-left">{entry.year}</td>
-                    <td className="p-2 text-right font-mono">{formatNumber(entry.consumption)}</td>
-                    <td className="p-2 text-right font-mono">{formatNumber(entry.price, 4)}</td>
-                    <td className="p-2 text-right font-mono">{formatNumber(entry.cost)}</td>
-                    <td className="p-2 text-right font-mono">{formatNumber(entry.paid)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {/* Grid-basierte Tabellendarstellung */}
+            <div className="w-full">
+              {/* Header-Zeile */}
+              <div className="grid grid-cols-6 bg-muted mb-2 font-medium">
+                <div className="p-2 text-left">Monat</div>
+                <div className="p-2 text-left">Jahr</div>
+                <div className="p-2 text-right">Verbrauch (kWh)</div>
+                <div className="p-2 text-right">Preis (€/kWh)</div>
+                <div className="p-2 text-right">Kosten (€)</div>
+                <div className="p-2 text-right">Bezahlt (€)</div>
+              </div>
+              
+              {/* Datenzeilen */}
+              {data.map((entry) => (
+                <div key={entry._id} className="grid grid-cols-6 border-b py-1 hover:bg-muted/50">
+                  <div className="p-2 text-left">{getMonthName(entry.month)}</div>
+                  <div className="p-2 text-left">{entry.year}</div>
+                  <div className="p-2 text-right font-mono">{formatNumber(entry.consumption)}</div>
+                  <div className="p-2 text-right font-mono">{formatNumber(entry.price, 4)}</div>
+                  <div className="p-2 text-right font-mono">{formatNumber(entry.cost)}</div>
+                  <div className="p-2 text-right font-mono">{formatNumber(entry.paid)}</div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </CardContent>
