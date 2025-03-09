@@ -1,6 +1,11 @@
 import { Dashboard } from "@/components/dashboard/dashboard";
-import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import dynamic from "next/dynamic";
+
+// Dynamisches Laden der Header-Komponente, um Client/Server-Komponenten-Probleme zu vermeiden
+const SiteHeader = dynamic(() => import("@/components/site-header").then(mod => mod.SiteHeader), {
+  ssr: true
+});
 
 export default function Home() {
   return (
