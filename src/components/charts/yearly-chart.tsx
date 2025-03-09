@@ -83,10 +83,6 @@ export function YearlyChart({ className }: YearlyChartProps) {
     totalPaid: {
       label: "Zahlungen (€)",
       color: "hsl(var(--chart-3))",
-    },
-    balance: {
-      label: "Kontostand (€)",
-      color: "hsl(var(--chart-4))",
     }
   } satisfies ChartConfig;
 
@@ -249,7 +245,6 @@ export function YearlyChart({ className }: YearlyChartProps) {
   const consumptionColor = chartConfig.totalConsumption.color;
   const costColor = chartConfig.totalCost.color;
   const paidColor = chartConfig.totalPaid.color;
-  const balanceColor = chartConfig.balance.color;
 
   return (
     <Card className={cn("", className)}>
@@ -263,43 +258,109 @@ export function YearlyChart({ className }: YearlyChartProps) {
             <CartesianGrid vertical={false} />
             <XAxis 
               dataKey="name" 
-              tickLine={false} 
-              tickMargin={10} 
+              tickLine={false}
+              tickMargin={10}
               axisLine={false}
             />
             <YAxis 
+              yAxisId="left"
+              orientation="left"
+              tickFormatter={(value) => `${value} kWh`}
               tickLine={false}
               axisLine={false}
             />
-            <ChartTooltip 
-              cursor={{ fill: "hsl(var(--muted))", opacity: 0.1 }}
-              wrapperStyle={{ outline: 'none' }}
-              content={<ChartTooltipContent labelKey="summary" indicator="dashed" />}
-              defaultIndex={chartData.length > 0 ? chartData.length - 1 : 0}
+            <YAxis 
+              yAxisId="right"
+              orientation="right"
+              tickFormatter={(value) => `${value} €`}
+              tickLine={false}
+              axisLine={false}
+            />
+            <Tooltip 
+              cursor={{ opacity: 0.15 }}
+              content={({ active, payload, label }) => {
+                if (!active || !payload || !payload.length) return null;
+                
+                // Gruppiere die Daten in Kategorien
+                const consumptionData = payload.find(p => p.dataKey === 'totalConsumption');
+                const financialData = payload.filter(p => 
+                  p.dataKey === 'totalCost' || 
+                  p.dataKey === 'totalPaid'
+                );
+                
+                return (
+                  <div className="rounded-lg border bg-background p-3 shadow-md" 
+                       style={{ backdropFilter: "blur(2px)" }}>
+                    <p className="text-sm font-semibold mb-2">Jahresübersicht {label}</p>
+                    
+                    {/* Verbrauchsdaten */}
+                    {consumptionData && (
+                      <>
+                        <div className="mb-2 text-xs font-medium text-muted-foreground">Verbrauch</div>
+                        <div className="flex items-center justify-between gap-4 rounded px-1.5 py-1 hover:bg-muted/50 transition-colors mb-3">
+                          <div className="flex items-center gap-1.5">
+                            <div 
+                              className="h-3 w-3 rounded-full" 
+                              style={{ backgroundColor: consumptionData.color }}
+                            />
+                            <span className="text-sm">Stromverbrauch</span>
+                          </div>
+                          <span className="text-sm font-medium tabular-nums">
+                            {typeof consumptionData.value === 'number' 
+                              ? consumptionData.value.toFixed(2) 
+                              : consumptionData.value} kWh
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    
+                    {/* Finanzdaten */}
+                    {financialData.length > 0 && (
+                      <>
+                        <div className="mb-2 text-xs font-medium text-muted-foreground">Finanzen</div>
+                        <div className="space-y-1.5">
+                          {financialData.map((item, index) => (
+                            <div key={index} className="flex items-center justify-between gap-4 rounded px-1.5 py-1 hover:bg-muted/50 transition-colors">
+                              <div className="flex items-center gap-1.5">
+                                <div 
+                                  className="h-3 w-3 rounded-full" 
+                                  style={{ backgroundColor: item.color }}
+                                />
+                                <span className="text-sm">
+                                  {item.dataKey === 'totalCost' ? 'Gesamtkosten' : 'Zahlungen'}
+                                </span>
+                              </div>
+                              <span className="text-sm font-medium tabular-nums">
+                                {typeof item.value === 'number' 
+                                  ? item.value.toFixed(2) 
+                                  : item.value} €
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              }}
             />
             <Bar 
+              yAxisId="left"
               dataKey="totalConsumption" 
               fill={consumptionColor} 
-              radius={[0, 0, 0, 0]} 
-              barSize={15} 
+              radius={[4, 4, 0, 0]}
             />
             <Bar 
+              yAxisId="right"
               dataKey="totalCost" 
-              fill={costColor} 
+              fill={costColor}
               radius={[0, 0, 0, 0]} 
-              barSize={15} 
             />
             <Bar 
+              yAxisId="right"
               dataKey="totalPaid" 
-              fill={paidColor} 
-              radius={[0, 0, 0, 0]} 
-              barSize={15} 
-            />
-            <Bar 
-              dataKey="balance" 
-              fill={balanceColor} 
-              radius={[4, 4, 0, 0]} 
-              barSize={15} 
+              fill={paidColor}
+              radius={[0, 0, 4, 4]} 
             />
           </BarChart>
         </ChartContainer>

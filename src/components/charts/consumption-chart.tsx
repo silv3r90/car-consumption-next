@@ -271,27 +271,72 @@ export function ConsumptionChart({ title, dataType, year, className }: Consumpti
             <XAxis 
               dataKey="month" 
               tickLine={false} 
-              tickMargin={10} 
-              axisLine={false}
+              axisLine={false} 
+              tickMargin={10}
             />
             <YAxis 
-              tickFormatter={(value) => `${value}`}
+              tickFormatter={(value) => {
+                switch (dataType) {
+                  case "consumption": return `${value} kWh`;
+                  case "price": return `${value} €/kWh`;
+                  default: return `${value} €`;
+                }
+              }}
               tickLine={false}
               axisLine={false}
             />
-            <ChartTooltip 
-              cursor={{ stroke: "hsl(var(--muted))", strokeDasharray: "5 5" }}
-              wrapperStyle={{ outline: 'none' }}
-              content={<ChartTooltipContent labelKey="metrics" indicator="dashed" />}
-              defaultIndex={6}
+            <Tooltip 
+              cursor={{ stroke: 'var(--muted)', strokeDasharray: '3 3', strokeWidth: 1 }}
+              content={({ active, payload, label }) => {
+                if (!active || !payload || !payload.length) return null;
+                
+                // Bestimme die richtige Einheit
+                let unit = '';
+                switch (dataType) {
+                  case "consumption": unit = " kWh"; break;
+                  case "price": unit = " €/kWh"; break;
+                  default: unit = " €"; break;
+                }
+                
+                return (
+                  <div className="rounded-lg border bg-background p-3 shadow-md"
+                       style={{ backdropFilter: "blur(2px)" }}>
+                    <p className="text-sm font-medium mb-2">{label} {currentYear}</p>
+                    <div className="space-y-1.5">
+                      {payload.map((item: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between gap-4 rounded px-1.5 py-1 hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center gap-1.5">
+                            <div 
+                              className="h-3 w-3 rounded-full" 
+                              style={{ backgroundColor: item.color }}
+                            />
+                            <span className="text-sm">{title}</span>
+                          </div>
+                          <span className="text-sm font-medium tabular-nums">
+                            {item.value.toFixed(2)}{unit}
+                          </span>
+                        </div>
+                      ))}
+                      {average !== null && (
+                        <div className="mt-2 pt-2 border-t flex items-center justify-between gap-4 px-1.5">
+                          <span className="text-sm text-muted-foreground">Ø Durchschnitt:</span>
+                          <span className="text-sm font-semibold tabular-nums">
+                            {average.toFixed(2)}{unit}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              }}
             />
             <Line 
               type="monotone" 
               dataKey="value" 
-              stroke={valueColor} 
-              strokeWidth={2} 
-              dot={{ r: 4, fill: valueColor }}
-              activeDot={{ r: 6, fill: valueColor, stroke: "hsl(var(--background))", strokeWidth: 2 }}
+              stroke={chartConfig.value.color} 
+              strokeWidth={2.5}
+              dot={{ strokeWidth: 2, r: 4, fill: 'var(--background)' }}
+              activeDot={{ strokeWidth: 2, r: 6, fill: 'var(--background)' }}
             />
           </LineChart>
         </ChartContainer>

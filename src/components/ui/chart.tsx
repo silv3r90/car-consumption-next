@@ -60,9 +60,13 @@ export function ChartContainer({
 
 // Props für den Chart-Tooltip-Inhalt
 interface ChartTooltipContentProps extends Omit<TooltipProps<number, string>, "content"> {
-  className?: string
-  indicator?: "line" | "dashed"
-  labelKey?: string
+  className?: string;
+  indicator?: "line" | "dashed" | "dot";
+  labelKey?: string;
+  formatter?: (value: number) => string;
+  showUnit?: boolean;
+  unit?: string;
+  colorMode?: "fill" | "border" | "both";
 }
 
 // Tooltip-Inhalt Komponente
@@ -73,6 +77,10 @@ export function ChartTooltipContent({
   className,
   indicator = "line",
   labelKey,
+  formatter,
+  showUnit = true,
+  unit,
+  colorMode = "both",
 }: ChartTooltipContentProps) {
   const config = React.useContext(ChartContext)
 
@@ -83,9 +91,54 @@ export function ChartTooltipContent({
   // Wenn ein labelKey angegeben ist, verwenden wir das entsprechende Label aus der Konfiguration
   const tooltipTitle = labelKey && config[labelKey] ? config[labelKey].label : label
 
+  // Funktion zum Formatieren der Werte
+  const formatValue = (value: number | string | null | undefined, dataKey: string): string => {
+    if (value === null || value === undefined) {
+      return '-';
+    }
+    
+    // Wenn der Formatter existiert, verwende ihn
+    if (formatter) {
+      return formatter(typeof value === 'number' ? value : 0);
+    }
+    
+    const numValue = typeof value === 'number' ? value : parseFloat(String(value));
+    
+    // Wenn es kein gültiger numerischer Wert ist, gib den Originalwert zurück
+    if (isNaN(numValue)) {
+      return String(value);
+    }
+
+    // Standardformatierung basierend auf dem Datentyp
+    if (dataKey.toLowerCase().includes('price')) {
+      return `${numValue.toFixed(2)} €/kWh`;
+    } else if (
+      dataKey.toLowerCase().includes('cost') || 
+      dataKey.toLowerCase().includes('paid') ||
+      dataKey.toLowerCase().includes('balance') ||
+      dataKey.toLowerCase().includes('amount')
+    ) {
+      return `${numValue.toFixed(2)} €`;
+    } else if (dataKey.toLowerCase().includes('consumption')) {
+      return `${numValue.toFixed(2)} kWh`;
+    }
+
+    // Überschreibung, wenn Unit explizit angegeben wurde
+    if (showUnit && unit) {
+      return `${numValue.toFixed(2)} ${unit}`;
+    }
+
+    // Fallback für unbekannte Datentypen
+    return numValue.toFixed(2);
+  }
+
   return (
     <div
-      className={`rounded-lg border bg-background p-2 shadow-sm ${className || ""}`}
+      className={`rounded-lg border bg-background p-2 shadow-md ${className || ""}`}
+      style={{
+        animation: "fadeIn 0.2s ease-in-out",
+        backdropFilter: "blur(2px)",
+      }}
     >
       <div className="grid grid-flow-col items-center justify-between gap-2">
         <p className="text-sm font-medium">{tooltipTitle}</p>
@@ -96,13 +149,15 @@ export function ChartTooltipContent({
               className="ml-2 flex items-center gap-1 text-xs font-semibold"
             >
               <div
-                className="h-1 w-4"
+                className={`h-2 w-4 rounded-sm transition-all duration-200`}
                 style={{
-                  backgroundColor: item.color,
-                  borderRadius: indicator === "line" ? "0" : "1px",
-                  borderStyle: indicator === "dashed" ? "dashed" : "solid",
-                  borderWidth: indicator === "dashed" ? "1px" : "0",
-                  borderColor: item.color
+                  backgroundColor: colorMode !== "border" ? item.color : "transparent",
+                  borderRadius: indicator === "dot" ? "50%" : indicator === "line" ? "0" : "2px",
+                  borderStyle: colorMode !== "fill" ? "solid" : "none",
+                  borderWidth: colorMode !== "fill" ? "1px" : "0",
+                  borderColor: item.color,
+                  width: indicator === "dot" ? "8px" : "16px",
+                  height: indicator === "dot" ? "8px" : "8px"
                 }}
               />
               <span>{config[item.dataKey]?.label}</span>
@@ -110,19 +165,24 @@ export function ChartTooltipContent({
           ))}
         </div>
       </div>
-      <div className="mt-1 grid grid-flow-col justify-start gap-3">
+      <div className="mt-2 grid grid-cols-1 gap-1.5">
         {payload.map((item: any) => (
           <div
             key={item.dataKey}
-            className="flex items-center gap-1 text-sm font-bold"
+            className="flex items-center justify-between gap-3 rounded px-2 py-1 hover:bg-muted transition-colors"
           >
-            <div
-              className="h-3 w-3 rounded-full"
-              style={{
-                backgroundColor: item.color,
-              }}
-            />
-            <span>{typeof item.value === 'number' ? item.value.toFixed(2) : item.value}</span>
+            <div className="flex items-center gap-1.5">
+              <div
+                className="h-3 w-3 rounded-full"
+                style={{
+                  backgroundColor: item.color,
+                }}
+              />
+              <span className="text-sm">{config[item.dataKey]?.label}</span>
+            </div>
+            <span className="text-sm font-medium tabular-nums">
+              {formatValue(item.value, item.dataKey)}
+            </span>
           </div>
         ))}
       </div>
@@ -181,11 +241,17 @@ export function ChartLegend({
   )
 }
 
-// Tooltip Wrapper-Komponente
-export function ChartTooltip(props: React.ComponentProps<typeof Tooltip>) {
+// Tooltip Wrapper-Komponente mit korrigierter Typendefinition
+export function ChartTooltip(props: Omit<React.ComponentProps<typeof Tooltip>, "content">) {
   return (
     <Tooltip 
-      content={<ChartTooltipContent />}
+      content={(tooltipProps: any) => <ChartTooltipContent {...tooltipProps} />}
+      wrapperStyle={{ outline: 'none' }}
+      cursor={{ 
+        strokeDasharray: '3 3', 
+        stroke: 'var(--muted)', 
+        strokeWidth: 1 
+      }}
       {...props} 
     />
   )

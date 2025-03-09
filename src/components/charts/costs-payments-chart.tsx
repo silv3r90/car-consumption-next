@@ -198,10 +198,34 @@ export function CostsPaymentsChart({ title, year, className }: CostsPaymentsChar
               tickLine={false}
               axisLine={false}
             />
-            <ChartTooltip 
-              cursor={false}
-              content={<ChartTooltipContent labelKey="finances" indicator="dashed" />}
-              defaultIndex={1}
+            <Tooltip 
+              cursor={{ opacity: 0.15 }}
+              content={({ active, payload, label }) => {
+                if (!active || !payload || !payload.length) return null;
+                
+                return (
+                  <div className="rounded-lg border bg-background p-3 shadow-md" 
+                       style={{ backdropFilter: "blur(2px)" }}>
+                    <p className="text-sm font-medium mb-2">{label} {currentYear}</p>
+                    <div className="space-y-1.5">
+                      {payload.map((item: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between gap-4 rounded px-1.5 py-1 hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center gap-1.5">
+                            <div 
+                              className="h-3 w-3 rounded-full" 
+                              style={{ backgroundColor: item.color }}
+                            />
+                            <span className="text-sm">{item.name}</span>
+                          </div>
+                          <span className="text-sm font-medium tabular-nums">
+                            {item.value.toFixed(2)} €
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }}
             />
             <Bar dataKey="Kosten" fill={kostenColor} radius={[0, 0, 4, 4]} />
             <Bar dataKey="Zahlungen" fill={zahlungenColor} radius={[4, 4, 0, 0]} />
